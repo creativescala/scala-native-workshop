@@ -1,4 +1,4 @@
-# Project Setup for Scala Native
+# Project Setup
 
 In this section we'll look at how to setup and build a Scala Native project with sbt, and some particular details of this project.
 
@@ -9,9 +9,15 @@ In this section we'll look at how to setup and build a Scala Native project with
 2. Change the settings in `project/Settings.scala`.
 3. Start sbt and run `build` to make it happen.
 
-Most likely lots of stuff will be downloaded, Scala will churn for a while, and it will finish.
+Most likely lots of stuff will be downloaded, Scala will churn for a while, and it will finish successfully.
+This is fairly standard for a Scala project (though `build` does some stuff you might not have seen before, such as checking dependencies have up-to-date versions.)
+What's interesting is that we've also build a native executable using Scala Native.
+It is the file `core/target/scala-3.9.0/native-core`.
+Run it and see what happens.
+When you do so, notice how quickly it starts!
 
-How do we setup a sbt project to build for Scala Native? What are the sbt commands that do Scala Native *stuff*?
+How do we setup a sbt project to build for Scala Native? 
+What are the sbt commands that do Scala Native *stuff*?
 
 
 ## Project Setup
@@ -37,4 +43,6 @@ This can be useful even if we don't want to target multiple platforms, running t
 
 # Sbt Commands
 
-`nativeLink`
+The `nativeLink` sbt command is the one that builds the native executable. Just compiling the code is not enough; we *must* run `nativeLink` to produce the executable. The executable's name is the value of the `moduleName` sbt setting, so change that value if you'd like a more informative name.
+
+The `build` command is something I like to use before submitting a PR. It does a lot of checks, and takes a lot of time. You probably don't want to use it in this workshop, as iteration speed is more important than code quality. You can use the normal `compile`, `test`, and other sbt commands you are used to. Take a look at `build.sbt` if you want to see how `build` is defined.
