@@ -84,6 +84,11 @@ libraryDependencies ++= Seq(
 
 To add a new dependency, add a version and a definition to `project/Dependencies.scala`, and then add it to the `libraryDependencies` of the `core` project in `build.sbt`.
 
+@:callout(info)
+#### Dependencies in sbt 2
+
+sbt 2.0 uses just `%%` for dependencies no matter the platform. I haven't yet played enough with sbt 2 to know if there are any caveats.
+@:@
 
 ## sbt Commands
 
