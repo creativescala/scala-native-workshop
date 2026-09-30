@@ -1,0 +1,377 @@
+<!doctype html>
+<html class="scroll-smooth"
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="Laika 1.0.0" />
+    <title>Interfacing with C</title>
+     
+    <meta name="description" content="docs" />
+    
+    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=4.8.0&features=es6"></script>
+    <script
+      id="MathJax-script"
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
+    <link
+      href="https://fonts.googleapis.com/css?family=Source+Code+Pro:400|Source+Sans+Pro:300,400,600"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Crimson+Pro:400"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" type="text/css" href="css/creative-scala.css" /> <script src="js/theme-toggle.js"></script><script src="js/solution.js"></script><script src="main.js"></script>
+    <script>
+      /* for avoiding page load transitions */
+    </script>
+  </head>
+
+  <body>
+    <header>
+      <div id="topbar">
+        <nav id="sm-contents">
+          <button id="toc-toggle" class="text-sm font-sans font-semibold" popovertarget="sm-toc">
+            Contents
+          </button>
+          <div id="sm-toc" popover="auto">
+            <div id="sm-toc-container">
+              <div id="sm-toc-box">
+                <button id="toc-close" popovertarget="sm-toc" popovertargetaction="hide" >
+                  <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+                <div class="w-full">
+                  <ul class="nav-list">
+                    <li class="level1 nav-node"><a href="index.html">Real Applications in Scala Native</a></li>
+                    <li class="level2 nav-leaf"><a href="project.html">Project Setup</a></li>
+                    <li class="level2 nav-leaf"><a href="terminal.html">The Terminal</a></li>
+                    <li class="level2 nav-leaf"><a href="syscalls.html">System Calls</a></li>
+                    <li class="level2 nav-leaf"><a href="posix.html">POSIX APIs</a></li>
+                    <li class="level2 active nav-leaf"><a href="#">Interfacing with C</a></li>
+                    <li class="level2 nav-leaf"><a href="final.html">Bringing it Together</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+        <nav id="home"><a class="text-link" href="index.html">Scala Native Workshop</a></nav>
+        <div>
+          <nav id="external">
+            <a href="https://discord.gg/rRhcFbJxVG">Community<span><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-square-arrow-out-up-right' > <path d='M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' /> <path d='m21 3-9 9' /> <path d='M15 3h6v6' /> </svg></span></a> <a href="https://javadoc.io/doc/org.creativescala/native_3/latest/">API<span><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-square-arrow-out-up-right' > <path d='M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' /> <path d='m21 3-9 9' /> <path d='M15 3h6v6' /> </svg></span></a> <a href="https://github.com/creativescala/scala-native-workshop">Source<span><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-square-arrow-out-up-right' > <path d='M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6' /> <path d='m21 3-9 9' /> <path d='M15 3h6v6' /> </svg></span></a>
+          </nav>
+          <span>
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+            </svg>
+            <button class="toggle-button" onclick="toggleTheme()" aria-label="Toggle dark mode">
+              <span class="toggle-circle"></span>
+            </button>
+            <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
+            </svg>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Left sticky table of contents -->
+      <nav id="contents">
+        <div>
+          <ul class="nav-list">
+            <li class="level1 nav-node"><a href="index.html">Real Applications in Scala Native</a></li>
+            <li class="level2 nav-leaf"><a href="project.html">Project Setup</a></li>
+            <li class="level2 nav-leaf"><a href="terminal.html">The Terminal</a></li>
+            <li class="level2 nav-leaf"><a href="syscalls.html">System Calls</a></li>
+            <li class="level2 nav-leaf"><a href="posix.html">POSIX APIs</a></li>
+            <li class="level2 active nav-leaf"><a href="#">Interfacing with C</a></li>
+            <li class="level2 nav-leaf"><a href="final.html">Bringing it Together</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div id="contentbar">
+        <div id="content-inner">
+          <div id="content"><h1 id="interfacing-with-c" class="title">Interfacing with C</h1>
+<p>In this section we&#39;ll gain some experience writing bindings.
+We&#39;ll work through a sequence of small exercises, each introducing one or two new ideas.
+First we&#39;ll use the <code>termios</code> structure we&#39;ve already seen to make calls to <code>read</code> that time out.
+This will allow us to distinguish keycodes starting with <code>ESC</code> from the user pressing the Escape key.
+We&#39;ll then work our way up to a binding that gets the terminal&#39;s size, which will require us to define a C struct in Scala and write a small amount of C code.</p>
+
+<h2 id="reading-with-a-timeout" class="section">Reading with a Timeout</h2>
+<p>Reading from <code>System.in</code> blocks until a character is available. This is a problem when reading from the terminal. As we know, some keys produce a sequence of characters. It&#39;s not always clear when a sequence has finished or we should continue reading. This is most obviously the case for the <code>ESC</code> character. When we see an <code>ESC</code> it could indicate the user has pressed the Escape key, or it could be the start of a character sequence. How do we tell?</p>
+<p>The standard way to tell them apart (and this shows the hacked together nature of a lot of the terminal) is the duration between characters. If we see an <code>ESC</code> followed by a pause of a few hundred milliseconds we can assume it is the Escape key. If we see an <code>ESC</code> immediately followed by more bytes we assume it is the start of a sequence.</p>
+<p>To implement this we need to be able to read with a timeout. The <code>termios</code> structure supports two fields, known as <code>VMIN</code> and <code>VTIME</code>, that allow us to change how the <code>read</code> system call works. <a href="http://www.unixwiz.net/techtips/termios-vmin-vtime.html">This article</a> gives a good overview of what the settings mean. You can also check the man pages.</p>
+<p>Note that we can&#39;t use <code>System.in.read()</code> with these changes, as it will convert the timeout into a -1, which incorrectly indicates an end-of-file. We have to call <code>unistd.read</code> ourselves, which we introduced in the previous section.</p>
+<div class="exercise">
+  
+  <h4 id="exercise-reading-with-a-timeout">Exercise: Reading with a Timeout</h4>
+  <p>Change <code>withRawMode</code> so that <code>read</code> waits at most 0.1 seconds for input.
+  Then use this to tell the Escape key apart from the arrow keys.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li>An array inside a struct: <code>VMIN</code> and <code>VTIME</code> are indexes into the <code>c_cc</code> array. Assigning to an element updates the struct in place.</li>
+      <li><code>UByte</code>, as <code>c_cc</code> holds <code>cc_t</code>, which is <code>unsigned char</code>.</li>
+      <li>Calling <code>read</code> directly, with a buffer we allocate.</li>
+    </ul>
+    <p>We want <code>VMIN = 0</code> and <code>VTIME = n</code>, which means &quot;return as soon as any input is available, or after n tenths of a second&quot;. A timeout makes <code>read</code> return 0. </p>
+    <pre><code class="nohighlight"><span class="comment">// In withRawMode, before calling tcsetattr
+</span><span class="identifier">raw</span><span>.</span><span class="identifier">c_cc</span><span>(</span><span class="type-name">VMIN</span><span>) = </span><span class="number-literal">0</span><span>.</span><span class="identifier">toUByte</span><span>
+</span><span class="identifier">raw</span><span>.</span><span class="identifier">c_cc</span><span>(</span><span class="type-name">VTIME</span><span>) = </span><span class="number-literal">1</span><span>.</span><span class="identifier">toUByte</span></code></pre>
+    <p>Now we can read a <code>Byte</code> on a timeout, returning <code>None</code> if no data is available.</p>
+    <pre><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">readByte</span><span>(): </span><span class="type-name">Option</span><span>[</span><span class="type-name">Byte</span><span>] =
+  </span><span class="type-name">Zone</span><span>:
+    </span><span class="keyword">val</span><span> </span><span class="identifier">buffer</span><span> = </span><span class="identifier">alloc</span><span>[</span><span class="type-name">Byte</span><span>]()
+    </span><span class="identifier">unistd</span><span>.</span><span class="identifier">read</span><span>(</span><span class="type-name">STDIN_FILENO</span><span>, </span><span class="identifier">buffer</span><span>, </span><span class="number-literal">1</span><span>.</span><span class="identifier">toCSize</span><span>) </span><span class="keyword">match</span><span>
+      </span><span class="keyword">case</span><span> </span><span class="number-literal">1</span><span> =&gt; </span><span class="type-name">Some</span><span>(!</span><span class="identifier">buffer</span><span>)
+      </span><span class="keyword">case</span><span> </span><span class="number-literal">0</span><span> =&gt; </span><span class="type-name">None</span><span>
+      </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="keyword">throw</span><span> </span><span class="keyword">new</span><span> </span><span class="type-name">RuntimeException</span><span>(</span><span class="string-literal">&quot;Could not read input&quot;</span><span>)</span></code></pre>
+    <p>Distinguishing keys: after reading <code>ESC</code>, read again. A timeout means it was the Escape key. <code>[</code> followed by <code>A</code>–<code>D</code> is an arrow key.</p>
+    <pre><code class="nohighlight"><span class="type-name">Terminal</span><span>.</span><span class="identifier">readByte</span><span>().</span><span class="identifier">map</span><span>:
+  </span><span class="keyword">case</span><span> </span><span class="number-literal">27</span><span> =&gt;
+    </span><span class="type-name">Terminal</span><span>.</span><span class="identifier">readByte</span><span>() </span><span class="keyword">match</span><span>
+      </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;[&#39;</span><span>) =&gt;
+        </span><span class="type-name">Terminal</span><span>.</span><span class="identifier">readByte</span><span>() </span><span class="keyword">match</span><span>
+          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;A&#39;</span><span>) =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Up</span><span>
+          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;B&#39;</span><span>) =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Down</span><span>
+          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;C&#39;</span><span>) =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Right</span><span>
+          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;D&#39;</span><span>) =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Left</span><span>
+          </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span>         =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Escape</span><span>
+      </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Escape</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="identifier">byte</span><span> =&gt; </span><span class="type-name">Key</span><span>.</span><span class="type-name">Character</span><span>(</span><span class="identifier">byte</span><span>.</span><span class="identifier">toChar</span><span>)</span></code></pre>
+  </div>
+</div>
+
+<h2 id="error-messages" class="section">Error Messages</h2>
+<p>This exercise is optional. None of the later exercises depend on it, so skip it if you&#39;re short on time.</p>
+<p>So far, when a C function fails we throw an exception with a message like &quot;Could not get terminal settings&quot;. That tells us <em>what</em> failed, but not <em>why</em>. As we saw in the previous section, most C functions report failure by returning <code>-1</code> and setting the global variable <code>errno</code> to a code saying what went wrong. The C function <code>strerror</code> converts this code into a human readable message. Scala Native binds <code>errno</code> in <code>scala.scalanative.libc.errno</code>, and <code>strerror</code> in <code>scala.scalanative.libc.string</code>.</p>
+<div class="exercise">
+  
+  <h4 id="exercise-better-error-messages">Exercise: Better Error Messages</h4>
+  <p>Write a method <code>fail(message: String): Nothing</code> that throws an exception including both <code>message</code> and the reason for the error given by <code>errno</code>. Use it in <code>withRawMode</code>. Test it by running your program with input redirected from <code>/dev/null</code>, which isn&#39;t a terminal.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li><code>errno</code>, which is how C functions report the reason for an error.</li>
+      <li>Converting a C string, <code>CString</code>, to a Scala <code>String</code> using <code>fromCString</code>. <code>strerror</code> returns a <code>CString</code>.</li>
+    </ul>
+    <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">scalanative</span><span>.</span><span class="identifier">libc</span><span>.</span><span class="identifier">errno</span><span>.</span><span class="identifier">errno</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">scalanative</span><span>.</span><span class="identifier">libc</span><span>.</span><span class="identifier">string</span><span>.</span><span class="identifier">strerror</span><span>
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">fail</span><span>(</span><span class="identifier">message</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Nothing</span><span> =
+  </span><span class="keyword">val</span><span> </span><span class="identifier">code</span><span> = </span><span class="identifier">errno</span><span>
+  </span><span class="keyword">throw</span><span> </span><span class="keyword">new</span><span> </span><span class="type-name">RuntimeException</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">$message</span><span class="string-literal">: </span><span class="substitution">${fromCString(strerror(code))}</span><span class="string-literal">&quot;</span><span>)</span></code></pre>
+    <p>We read <code>errno</code> into a local variable before doing anything else. <code>errno</code> is shared by every C function we call, so any other call could change it. For the same reason we should call <code>fail</code> immediately after the call that failed.</p>
+    <p>Running with <code>&lt; /dev/null</code> gives</p>
+    <pre><code>java.lang.RuntimeException: Could not get terminal settings: Inappropriate ioctl for device</code></pre>
+    <p>The message mentions <code>ioctl</code>, which is the system call <code>tcgetattr</code> uses on Linux. We&#39;ll meet <code>ioctl</code> directly in the next exercise.</p>
+  </div>
+</div>
+
+<h2 id="how-much-input-is-waiting" class="section">How Much Input Is Waiting?</h2>
+<p><code>ioctl</code> is the system call for everything that doesn&#39;t fit anywhere else. Its name is short for &quot;input/output control&quot;, and it performs a device-specific operation on a file descriptor. The operation is chosen by a <em>request</em> number, and the request determines what the third argument means. A lot of terminal functionality is only available through <code>ioctl</code>.</p>
+<p>One request is <code>FIONREAD</code>, which tells us how many bytes are waiting to be read. The third argument is a pointer to an <code>int</code>, and <code>ioctl</code> writes its result there. This is a very common pattern in C, known as an <em>out-parameter</em>. C functions can only return a single value, which is usually used to report errors, so results are returned by writing them to memory the caller provides. We saw this before with <code>tcgetattr</code>, which writes into the <code>termios</code> struct we give it.</p>
+<p>Scala Native binds both <code>ioctl</code> and <code>FIONREAD</code> in <code>scala.scalanative.posix.sys.ioctl</code>. Its binding for <code>ioctl</code> looks like</p>
+<pre><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">ioctl</span><span>(</span><span class="identifier">fd</span><span>: </span><span class="type-name">CInt</span><span>, </span><span class="identifier">request</span><span>: </span><span class="type-name">CLongInt</span><span>, </span><span class="identifier">argp</span><span>: </span><span class="type-name">Ptr</span><span>[</span><span class="type-name">Byte</span><span>]): </span><span class="type-name">CInt</span></code></pre>
+<div class="exercise">
+  
+  <h4 id="exercise-bytes-available">Exercise: Bytes Available</h4>
+  <p>Write a method <code>bytesAvailable(): Int</code> that returns the number of bytes waiting to be read on standard input. To try it out, write a program that calls <code>bytesAvailable</code> once a second and prints the result. You don&#39;t need raw mode for this. Type some characters and press Enter, and watch the count go up.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li>Out-parameters: allocate memory for the result, pass a pointer to it, and then read the result from the pointer using <code>!</code>.</li>
+      <li>Casting pointers: the binding for <code>ioctl</code> expects a <code>Ptr[Byte]</code>, but we have a <code>Ptr[CInt]</code>. We can convert one to the other with <code>asInstanceOf</code>. This doesn&#39;t change the pointer, just what Scala Native thinks it points to.</li>
+    </ul>
+    <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">scalanative</span><span>.</span><span class="identifier">posix</span><span>.</span><span class="identifier">sys</span><span>.</span><span class="identifier">ioctl</span><span>.{</span><span class="type-name">FIONREAD</span><span>, </span><span class="identifier">ioctl</span><span>}
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">bytesAvailable</span><span>(): </span><span class="type-name">Int</span><span> =
+  </span><span class="type-name">Zone</span><span>:
+    </span><span class="comment">// Space for ioctl to write its result into
+</span><span>    </span><span class="keyword">val</span><span> </span><span class="identifier">count</span><span> = </span><span class="identifier">alloc</span><span>[</span><span class="type-name">CInt</span><span>]()
+    </span><span class="keyword">if</span><span> </span><span class="identifier">ioctl</span><span>(</span><span class="type-name">STDIN_FILENO</span><span>, </span><span class="type-name">FIONREAD</span><span>, </span><span class="identifier">count</span><span>.</span><span class="identifier">asInstanceOf</span><span>[</span><span class="type-name">Ptr</span><span>[</span><span class="type-name">Byte</span><span>]]) != </span><span class="number-literal">0</span><span> </span><span class="identifier">then</span><span>
+      </span><span class="keyword">throw</span><span> </span><span class="keyword">new</span><span> </span><span class="type-name">RuntimeException</span><span>(</span><span class="string-literal">&quot;Could not get number of bytes available&quot;</span><span>)
+    </span><span class="comment">// Read the value count points to
+</span><span>    !</span><span class="identifier">count</span></code></pre>
+    <p>Why does Scala Native&#39;s binding take a <code>Ptr[Byte]</code> when the third argument can point to anything? In C, <code>ioctl</code> is declared as</p>
+    <pre><code class="c">int ioctl(int fd, unsigned long request, ...);</code></pre>
+    <p>The <code>...</code> means <code>ioctl</code> is <em>variadic</em>: it takes any number of extra arguments, of any type. Variadic functions are awkward to call from other languages. On some platforms, including macOS on Apple Silicon, variadic arguments are passed differently from normal arguments, so a binding that pretends <code>ioctl</code> takes exactly three arguments might work on Linux and fail on a Mac. Scala Native avoids this by calling a small C function that takes exactly three arguments and passes them on to <code>ioctl</code>. The third argument had to be given some type, and <code>void *</code> (which Scala Native writes as <code>Ptr[Byte]</code> here) is the natural choice.</p>
+    <p><code>bytesAvailable</code> gives us another way to distinguish the Escape key from escape codes. After reading <code>ESC</code>, if more bytes are available, it&#39;s probably an escape code. Unlike the timeout approach, this doesn&#39;t wait at all, but it can be fooled if the rest of the escape code hasn&#39;t arrived yet. This might happen, for example, over a slow network connection.</p>
+  </div>
+</div>
+
+<h2 id="terminal-size" class="section">Terminal Size</h2>
+<p>We&#39;d really like to know the size of the terminal, so we can draw things that fit on the screen. We can get this using the <code>ioctl</code> request <code>TIOCGWINSZ</code> (terminal I/O control get window size). This time the third argument is a pointer to a struct, which the <code>ioctl</code> fills in. From <code>man TIOCGWINSZ</code> on Linux (<code>man ioctl_tty</code> on older systems), the struct is</p>
+<pre><code class="c">struct winsize {
+    unsigned short ws_row;
+    unsigned short ws_col;
+    unsigned short ws_xpixel;   /* unused */
+    unsigned short ws_ypixel;   /* unused */
+};</code></pre>
+<p>Scala Native binds neither <code>TIOCGWINSZ</code> nor <code>struct winsize</code>, so we must define them ourselves.</p>
+<p>In Scala Native a struct is defined using one of the <code>CStruct</code> types, which are numbered by the number of fields they have. <code>CStruct4[A, B, C, D]</code> is a struct with four fields of types <code>A</code>, <code>B</code>, <code>C</code>, and <code>D</code>. Fields don&#39;t have names, but are accessed by position using <code>_1</code>, <code>_2</code>, and so on. We usually define a type alias for the struct, as in</p>
+<pre><code class="nohighlight"><span class="keyword">type</span><span> </span><span class="identifier">point</span><span> = </span><span class="type-name">CStruct2</span><span>[</span><span class="type-name">CInt</span><span>, </span><span class="type-name">CInt</span><span>]</span></code></pre>
+<p>and then allocate and use it like the <code>termios</code> struct we have already seen.</p>
+<pre><code class="nohighlight"><span class="keyword">val</span><span> </span><span class="identifier">p</span><span> = </span><span class="identifier">alloc</span><span>[</span><span class="identifier">point</span><span>]()
+</span><span class="identifier">p</span><span class="number-literal">._1</span><span> = </span><span class="number-literal">3</span><span>
+</span><span class="identifier">p</span><span class="number-literal">._2</span><span> = </span><span class="number-literal">4</span></code></pre>
+<div class="exercise">
+  
+  <h4 id="exercise-terminal-size">Exercise: Terminal Size</h4>
+  <p>Define <code>struct winsize</code> in Scala, and write a method <code>terminalSize(): (Int, Int)</code> that returns the number of rows and columns in the terminal. For now, hard-code the value of <code>TIOCGWINSZ</code>. It&#39;s <code>0x5413</code> on Linux, and <code>0x40087468</code> on macOS.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li>Defining a struct using <code>CStruct4</code>, and accessing its fields.</li>
+      <li><code>CLongInt</code>, the type of <code>ioctl</code>&#39;s request, is an alias for <code>Size</code>. We convert an <code>Int</code> to a <code>Size</code> using <code>toSize</code>.</li>
+    </ul>
+    <pre><code class="nohighlight"><span class="keyword">type</span><span> </span><span class="identifier">winsize</span><span> =
+  </span><span class="type-name">CStruct4</span><span>[</span><span class="type-name">CUnsignedShort</span><span>, </span><span class="type-name">CUnsignedShort</span><span>, </span><span class="type-name">CUnsignedShort</span><span>, </span><span class="type-name">CUnsignedShort</span><span>]
+
+</span><span class="comment">// 0x5413 on Linux; use 0x40087468 on macOS
+</span><span class="keyword">val</span><span> </span><span class="type-name">TIOCGWINSZ</span><span>: </span><span class="type-name">CLongInt</span><span> = </span><span class="number-literal">0x5413</span><span>.</span><span class="identifier">toSize</span><span>
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">terminalSize</span><span>(): (</span><span class="type-name">Int</span><span>, </span><span class="type-name">Int</span><span>) =
+  </span><span class="type-name">Zone</span><span>:
+    </span><span class="keyword">val</span><span> </span><span class="identifier">size</span><span> = </span><span class="identifier">alloc</span><span>[</span><span class="identifier">winsize</span><span>]()
+    </span><span class="keyword">if</span><span> </span><span class="identifier">ioctl</span><span>(</span><span class="type-name">STDOUT_FILENO</span><span>, </span><span class="type-name">TIOCGWINSZ</span><span>, </span><span class="identifier">size</span><span>.</span><span class="identifier">asInstanceOf</span><span>[</span><span class="type-name">Ptr</span><span>[</span><span class="type-name">Byte</span><span>]]) != </span><span class="number-literal">0</span><span> </span><span class="identifier">then</span><span>
+      </span><span class="keyword">throw</span><span> </span><span class="keyword">new</span><span> </span><span class="type-name">RuntimeException</span><span>(</span><span class="string-literal">&quot;Could not get terminal size&quot;</span><span>)
+    </span><span class="comment">// _1 is ws_row and _2 is ws_col
+</span><span>    (</span><span class="identifier">size</span><span class="number-literal">._1</span><span>.</span><span class="identifier">toInt</span><span>, </span><span class="identifier">size</span><span class="number-literal">._2</span><span>.</span><span class="identifier">toInt</span><span>)</span></code></pre>
+    <p>This is the same as the previous exercise, except <code>ioctl</code> writes into a struct instead of an <code>int</code>. We ask about standard output, as that&#39;s where we&#39;ll draw, but any file descriptor connected to the terminal will work.</p>
+    <p>Although the value of <code>TIOCGWINSZ</code> is different on Linux and macOS, the layout of <code>struct winsize</code> is the same. This means our definition of <code>winsize</code> is portable, but our value for <code>TIOCGWINSZ</code> is not.</p>
+    <p><code>size._1</code> isn&#39;t very readable. If you&#39;d like names like <code>size.ws_row</code>, you can define extension methods in the same way that Scala Native&#39;s <code>termiosOps</code> does.</p>
+  </div>
+</div>
+
+<h2 id="terminal-size-portably" class="section">Terminal Size, Portably</h2>
+<p>Our code for getting the terminal size only works on the operating system we hard-coded <code>TIOCGWINSZ</code> for. To make it portable we need to get the value of <code>TIOCGWINSZ</code> from the C header files, which means writing some C. As we discussed in the previous section, this is exactly what Scala Native does for constants like <code>ECHO</code>.</p>
+<p>The C code we need is very simple. It&#39;s a function that returns the value of <code>TIOCGWINSZ</code>.</p>
+<pre><code class="c">#include &lt;sys/ioctl.h&gt;
+
+long workshop_tiocgwinsz(void) { return TIOCGWINSZ; }</code></pre>
+<p><code>TIOCGWINSZ</code> is a macro, defined in <code>sys/ioctl.h</code>, so it only has a value when C code is compiled. The function makes this value available at run time. The return type is <code>long</code> to match the type of <code>ioctl</code>&#39;s request argument in Scala Native&#39;s binding.</p>
+<p>C has a single global namespace for functions. If two libraries define functions with the same name, linking will fail. For this reason it&#39;s conventional to prefix function names with the name of your library or project. Here we&#39;ve used <code>workshop_</code>.</p>
+<p>Scala Native compiles any C files it finds in a directory called <code>scala-native</code> in the project&#39;s resources, and links them with our program. In an sbt project that&#39;s <code>src/main/resources/scala-native/</code>. With the Scala CLI, specify a resource directory using <code>//&gt; using resourceDir resources</code> and put your C files in <code>resources/scala-native/</code>.</p>
+<p>We then bind to the C function using an <code>extern</code> object, as before. We don&#39;t want to call it <code>workshop_tiocgwinsz</code> in Scala, so we use the <code>@name</code> annotation to tell Scala Native the name of the C function.</p>
+<pre><code class="nohighlight"><span class="annotation">@extern</span><span>
+</span><span class="keyword">object</span><span> </span><span class="type-name">Example</span><span>:
+  </span><span class="annotation">@name</span><span>(</span><span class="string-literal">&quot;c_function_name&quot;</span><span>)
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">scalaName</span><span>(): </span><span class="type-name">CInt</span><span> = </span><span class="identifier">extern</span></code></pre>
+<div class="exercise">
+  
+  <h4 id="exercise-portable-terminal-size">Exercise: Portable Terminal Size</h4>
+  <p>Replace your hard-coded value for <code>TIOCGWINSZ</code> with the value from C.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li>Adding C code to a Scala Native project.</li>
+      <li>Using <code>@name</code> when the Scala name differs from the C name.</li>
+    </ul>
+    <p>With the C code above in <code>winsize.c</code>, the binding is</p>
+    <pre><code class="nohighlight"><span class="annotation">@extern</span><span>
+</span><span class="keyword">object</span><span> </span><span class="type-name">WinSize</span><span>:
+  </span><span class="annotation">@name</span><span>(</span><span class="string-literal">&quot;workshop_tiocgwinsz&quot;</span><span>)
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">TIOCGWINSZ</span><span>: </span><span class="type-name">CLongInt</span><span> = </span><span class="identifier">extern</span></code></pre>
+    <p>and <code>terminalSize</code> uses <code>WinSize.TIOCGWINSZ</code> in place of the hard-coded value. Notice we&#39;ve defined <code>TIOCGWINSZ</code> without parentheses, making it look like a constant. This is how Scala Native defines its own constants, such as <code>ECHO</code>.</p>
+    <p>If Scala Native doesn&#39;t find your C file you&#39;ll get a linking error like</p>
+    <pre><code>undefined reference to `workshop_tiocgwinsz&#39;</code></pre>
+    <p>just like the misspelled <code>isatty</code> in the previous section.</p>
+  </div>
+</div>
+
+<h2 id="redrawing-on-resize" class="section">Redrawing on Resize</h2>
+<p>This final exercise is a stretch goal.</p>
+<p>When the terminal is resized, the kernel sends the program running in it the <code>SIGWINCH</code> signal. A <em>signal</em> is a way for the kernel (or another process) to interrupt our program to tell it something has happened. We&#39;ve already met some signals: Ctrl-C sends <code>SIGINT</code>, and Ctrl-Z sends <code>SIGTSTP</code>. Each signal has a default action, which for <code>SIGINT</code> is terminating the program and for <code>SIGWINCH</code> is doing nothing. We can change this by installing a <em>signal handler</em>, a function that is called when the signal arrives.</p>
+<p>The simplest way to install a signal handler is the C function <code>signal</code>, which Scala Native binds in <code>scala.scalanative.libc.signal</code>.</p>
+<pre><code class="nohighlight"><span class="keyword">def</span><span> </span><span class="declaration-name">signal</span><span>(</span><span class="identifier">sig</span><span>: </span><span class="type-name">CInt</span><span>, </span><span class="identifier">handler</span><span>: </span><span class="type-name">CFuncPtr1</span><span>[</span><span class="type-name">CInt</span><span>, </span><span class="type-name">Unit</span><span>]): </span><span class="type-name">CFuncPtr1</span><span>[</span><span class="type-name">CInt</span><span>, </span><span class="type-name">Unit</span><span>]</span></code></pre>
+<p>The handler is a <code>CFuncPtr1[CInt, Unit]</code>, which is a pointer to a C function that takes one <code>CInt</code> argument (the signal number) and returns nothing. We can create one from a Scala function using <code>CFuncPtr1.fromScalaFunction</code>. There is one restriction: the Scala function cannot capture any local variables. A C function pointer is just the address of some code, with nowhere to store the values of captured variables. The function can refer to fields of top-level objects, however.</p>
+<p>A signal handler can run at any time, interrupting whatever our program was doing. This makes it very easy to write handlers that go wrong in strange ways. The safest thing to do in a signal handler is as little as possible. Usually this means setting a flag, which the main loop of the program checks.</p>
+<p>Scala Native doesn&#39;t bind <code>SIGWINCH</code>, which only recently joined the POSIX standard, so you&#39;ll need to get its value from C in the same way as <code>TIOCGWINSZ</code>. It&#39;s defined in <code>signal.h</code>.</p>
+<div class="exercise">
+  
+  <h4 id="exercise-watching-for-resizes">Exercise: Watching for Resizes</h4>
+  <p>Write a program that prints the terminal size when it starts, and again every time the terminal is resized. It should quit when the user presses <code>q</code>.</p>
+  <p>Hint: use the timeout from the first exercise, so that your main loop regularly checks for a resize even when the user isn&#39;t pressing any keys.</p>
+</div>
+<div class="solution">
+  <div class="solution-body">
+    <p>Here are the new concepts you&#39;ll need:</p>
+    <ul>
+      <li>Signals and signal handlers.</li>
+      <li>Creating C function pointers from Scala functions.</li>
+    </ul>
+    <p>We add another function to our C file</p>
+    <pre><code class="c">#include &lt;signal.h&gt;
+
+int workshop_sigwinch(void) { return SIGWINCH; }</code></pre>
+    <p>and bind it in our <code>extern</code> object</p>
+    <pre><code class="nohighlight"><span class="annotation">@name</span><span>(</span><span class="string-literal">&quot;workshop_sigwinch&quot;</span><span>)
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">SIGWINCH</span><span>: </span><span class="type-name">CInt</span><span> = </span><span class="identifier">extern</span></code></pre>
+    <p>The signal handler sets a flag in a top-level object. It starts as <code>true</code>, so we print the size when the program starts. The flag is <code>@volatile</code> as it is changed by the signal handler, outside the normal flow of the program.</p>
+    <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">Resize</span><span>:
+  </span><span class="annotation">@volatile</span><span> </span><span class="keyword">var</span><span> </span><span class="identifier">resized</span><span> = </span><span class="boolean-literal">true</span><span>
+
+  </span><span class="keyword">val</span><span> </span><span class="identifier">handler</span><span> = </span><span class="type-name">CFuncPtr1</span><span>.</span><span class="identifier">fromScalaFunction</span><span>[</span><span class="type-name">CInt</span><span>, </span><span class="type-name">Unit</span><span>](</span><span class="identifier">_</span><span> =&gt; </span><span class="identifier">resized</span><span> = </span><span class="boolean-literal">true</span><span>)
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">install</span><span>(): </span><span class="type-name">Unit</span><span> = </span><span class="identifier">signal</span><span>(</span><span class="type-name">WinSize</span><span>.</span><span class="type-name">SIGWINCH</span><span>, </span><span class="identifier">handler</span><span>)</span></code></pre>
+    <p>The main loop reads with a timeout, and checks the flag each time around.</p>
+    <pre><code class="nohighlight"><span class="annotation">@main</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">watchSize</span><span>(): </span><span class="type-name">Unit</span><span> =
+  </span><span class="type-name">Resize</span><span>.</span><span class="identifier">install</span><span>()
+  </span><span class="type-name">Terminal</span><span>.</span><span class="identifier">withRawMode</span><span>:
+    </span><span class="keyword">var</span><span> </span><span class="identifier">byte</span><span> = </span><span class="type-name">Terminal</span><span>.</span><span class="identifier">readByte</span><span>()
+    </span><span class="keyword">while</span><span> </span><span class="identifier">byte</span><span> != </span><span class="type-name">Some</span><span>(</span><span class="char-literal">&#39;q&#39;</span><span>.</span><span class="identifier">toByte</span><span>) </span><span class="identifier">do</span><span>
+      </span><span class="keyword">if</span><span> </span><span class="type-name">Resize</span><span>.</span><span class="identifier">resized</span><span> </span><span class="identifier">then</span><span>
+        </span><span class="type-name">Resize</span><span>.</span><span class="identifier">resized</span><span> = </span><span class="boolean-literal">false</span><span>
+        </span><span class="keyword">val</span><span> (</span><span class="identifier">rows</span><span>, </span><span class="identifier">cols</span><span>) = </span><span class="identifier">terminalSize</span><span>()
+        </span><span class="identifier">print</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">$cols</span><span class="string-literal"> columns x </span><span class="substitution">$rows</span><span class="string-literal"> rows</span><span class="escape-sequence">\r\n</span><span class="string-literal">&quot;</span><span>)
+        </span><span class="type-name">System</span><span>.</span><span class="identifier">out</span><span>.</span><span class="identifier">flush</span><span>()
+      </span><span class="identifier">byte</span><span> = </span><span class="type-name">Terminal</span><span>.</span><span class="identifier">readByte</span><span>()</span></code></pre>
+    <p>There is one more wrinkle. If a signal arrives while our program is waiting in <code>read</code>, the <code>read</code> may fail with <code>errno</code> set to <code>EINTR</code> (interrupted system call). Our <code>readByte</code> from the first exercise throws an exception when <code>read</code> fails, which is not what we want here. The simplest fix is to treat a failed <code>read</code> as a timeout. A better fix is to check whether <code>errno</code> is <code>EINTR</code>, using what we learned earlier, and only treat that case as a timeout.</p>
+    <p><code>signal</code> is the oldest and simplest way to install a signal handler. Its behavior varies between systems, and modern code should use <code>sigaction</code> instead. <code>sigaction</code> needs another struct, however, and <code>signal</code> is good enough for our purposes.</p>
+  </div>
+</div></div>
+          <div id="pagenav-wrapper">
+            <a class="pagenav" href="posix.html">←POSIX APIs</a> <a class="pagenav" href="final.html">Bringing it Together→</a>
+          </div>
+        </div>
+        <footer>
+          Copyright &copy; Noel Welsh. Built with
+          <span class="hover:text-pink-900">💖</span>
+        </footer>
+      </div>
+      <!-- Right sticky page contents -->
+      <nav id="pagebar">
+        <div>
+          <p>On This Page</p>
+          <ul class="nav-list">
+            <li class="level1 nav-leaf"><a href="#reading-with-a-timeout">Reading with a Timeout</a></li>
+            <li class="level1 nav-leaf"><a href="#error-messages">Error Messages</a></li>
+            <li class="level1 nav-leaf"><a href="#how-much-input-is-waiting">How Much Input Is Waiting?</a></li>
+            <li class="level1 nav-leaf"><a href="#terminal-size">Terminal Size</a></li>
+            <li class="level1 nav-leaf"><a href="#terminal-size-portably">Terminal Size, Portably</a></li>
+            <li class="level1 nav-leaf"><a href="#redrawing-on-resize">Redrawing on Resize</a></li>
+          </ul>
+        </div>
+      </nav>
+    </main>
+  </body>
+</html>
