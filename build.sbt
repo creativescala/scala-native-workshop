@@ -35,6 +35,7 @@ ThisBuild / developers := List(
 ThisBuild / crossScalaVersions := List(Settings.scalaVersion)
 ThisBuild / scalaVersion := Settings.scalaVersion
 ThisBuild / semanticdbEnabled := true
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 ThisBuild / tlSitePublishBranch := Some("main")
 
 // Run this (build) to do everything involved in building the project
