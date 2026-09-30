@@ -5,7 +5,7 @@ In this section we'll look at how to set up and build a Scala Native project wit
 
 ## Getting Started
 
-1. Clone or fork this repository to create your own project.
+1. Clone or fork [this repository](https://github.com/creativescala/scala-native-workshop) to create your own project.
 2. Change the settings in `project/Settings.scala`.
 3. Start sbt and run `build` to make it happen.
 
