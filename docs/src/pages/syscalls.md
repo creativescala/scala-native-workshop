@@ -1,6 +1,15 @@
 # System Calls
 
 In the previous section we created a program to display an animation, but notably did nothing with terminal input.
+This is because usefully handling input requires we interface with C and make system calls.
+There are several components to this.
+In this section we'll look at calling system functions that Scala Native already provides a binding for.
+Along the way we'll meet Scala Native's C types, POSIX bindings, and memory management.
+In later sections we'll look at these in more depth.
+
+
+## Terminal Input
+
 Terminal input uses the same model of escape codes as terminal output.
 This time it is special keys, such as the arrows, that the terminal reports using escape codes.
 You can see this for yourself. Run `cat` in your terminal, with no arguments, and then enter the famous [Konami code][konami]: up, up, down, down, left, right, left, right, B, A. You should see something like
@@ -74,21 +83,12 @@ stty sane
 
 You might like to try `stty -echo` in the same way, and see how `cat` behaves. (This is how programs read passwords without displaying them.) We don't recommend trying `stty raw` from the shell, as it's not easy to recover from!
 
-@:callout(info)
-#### A Digression into Man Pages
-
-Unix "documentation" is provided by man pages. We put documentation in scare quotes because it's the kind of documentation that really only works for experts.
-Specifically, if you know the answer (e.g. "termios") then `man 3 termios` will tell you the question ("the POSIX API for controlling the terminal").
-Most of us want to search by question, and we haven't found anything better than an LLM for answering these sorts of questions (`man -k` exists but isn't very useful).
-Your average LLM will know all the arcana scattered across Unix man pages, and will at least be able to point you in the right direction if it doesn't get all the details correct itself.
-@:@
-
 
 ## Switching to Raw Mode in Scala Native
 
-Now we know that raw mode controlled by the `termios` API we can call it from Scala!
+Now we know that raw mode is controlled by the `termios` API we can call it from Scala!
 Doing so requires learning the details of interfacing with system calls from Scala Native.
-This particular case is relatively easy, because Scala Native already provides a binding to this
+This particular case is relatively easy, because Scala Native already provides a [binding][scala-native-posix] to this
 API.
 
 The binding lives in `scala.scalanative.posix.termios`. It defines the `termios` struct, the
@@ -99,54 +99,70 @@ fields of the struct.
 Here's the code to switch into raw mode, run some code, and then switch back.
 
 ```scala
-import scala.scalanative.unsafe.*
 import scala.scalanative.posix.termios.*
 import scala.scalanative.posix.termiosOps.*
 import scala.scalanative.posix.unistd.STDIN_FILENO
+import scala.scalanative.unsafe.*
+import scala.scalanative.unsigned.*
 
-object Terminal {
-  def withRawMode[A](f: => A): A = {
-    // Allocate space for two termios structs on the stack
-    val original = stackalloc[termios]()
-    val raw = stackalloc[termios]()
+object Terminal:
+  def withRawMode[A](f: => A): A =
+    Zone:
+      // Allocate space for two termios structs
+      val original = alloc[termios]()
+      val raw = alloc[termios]()
 
-    // Get the current settings twice: one copy we keep, one we modify
-    if tcgetattr(STDIN_FILENO, original) != 0 ||
-       tcgetattr(STDIN_FILENO, raw) != 0
-    then throw new RuntimeException("Could not get terminal settings")
+      // Get the current settings twice: one copy we keep, one we modify
+      if tcgetattr(STDIN_FILENO, original) != 0 ||
+        tcgetattr(STDIN_FILENO, raw) != 0
+      then throw new RuntimeException("Could not get terminal settings")
 
-    // Turn off the flags for raw mode
-    raw.c_iflag = raw.c_iflag & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON)
-    raw.c_oflag = raw.c_oflag & ~OPOST
-    raw.c_cflag = raw.c_cflag | CS8
-    raw.c_lflag = raw.c_lflag & ~(ECHO | ICANON | IEXTEN | ISIG)
+      // Turn off the flags for raw mode
+      raw.c_iflag =
+        raw.c_iflag & ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON).toUInt
+      raw.c_oflag = raw.c_oflag & ~OPOST.toUInt
+      raw.c_cflag = raw.c_cflag | CS8.toUInt
+      raw.c_lflag = raw.c_lflag & ~(ECHO | ICANON | IEXTEN | ISIG).toUInt
 
-    if tcsetattr(STDIN_FILENO, TCSAFLUSH, raw) != 0 then
-      throw new RuntimeException("Could not set terminal settings")
+      if tcsetattr(STDIN_FILENO, TCSAFLUSH, raw) != 0 then
+        throw new RuntimeException("Could not set terminal settings")
 
-    // Run the user's code, and always restore the original settings
-    try f
-    finally tcsetattr(STDIN_FILENO, TCSAFLUSH, original)
-  }
-}
+      // Run the user's code, and always restore the original settings
+      try f
+      finally tcsetattr(STDIN_FILENO, TCSAFLUSH, original)
 ```
 
 There are a few things to note:
 
-- `stackalloc` allocates memory on the stack, just like a local variable in C. The memory is freed
-when the method returns. This is fine here, as we don't use the structs after `withRawMode`
-finishes.
-- `tcgetattr` and `tcsetattr` take a *pointer* to a `termios` struct, which is what `stackalloc`
-gives us. `tcgetattr` fills in the struct we point it to.
-- We work on standard input, `STDIN_FILENO`, which is file descriptor 0. This is the tty our
-program inherited from the shell.
-- Like most C functions, `tcgetattr` and `tcsetattr` report errors by returning a non-zero value,
-not by throwing an exception. We check for this and throw an exception ourselves.
-- We use bitwise operations to change the flags. `flags & ~X` turns off `X`, and `flags | X` turns
-it on.
-- `TCSAFLUSH` tells `tcsetattr` to apply the change once all pending output has been written, and
-to discard any input that hasn't been read yet.
-- The `try`/`finally` makes sure we restore the original settings even if `f` throws an exception.
+- `Zone` creates a [memory zone, or region, or arena allocator][region]. This is
+  a portion of memory that is freed when control leaves the scope of the `Zone`.
+
+- `alloc` allocates memory in the zone.
+
+- `tcgetattr` and `tcsetattr` take a *pointer* to a `termios` struct, which is
+   what `alloc` gives us. `tcgetattr` fills in the struct we point it to.
+
+- We work on standard input, `STDIN_FILENO`, which is file descriptor 0. This
+  is the tty our program inherited from the shell.
+
+- Like most C functions, `tcgetattr` and `tcsetattr` report errors by returning
+  a non-zero value, not by throwing an exception. We check for this and throw
+  an exception ourselves.
+
+- We use bitwise operations to change the flags. `flags & ~X` turns off `X`,
+  and `flags | X` turns it on.
+
+- The flags are unsigned integers. Scala Native extends Scala with these types
+  (`UByte`, `UShort`, `UInt`, and `ULong`). We convert standard signed integers
+  to unsigned ones using `toUInt`. We do this here because the constants
+  `BRKINT` etc. are signed integers. Importing `scala.scalanative.unsigned.*`
+  brings in these conversions.
+
+- `TCSAFLUSH` tells `tcsetattr` to apply the change once all pending output has
+  been written, and to discard any input that hasn't been read yet.
+
+- The `try`/`finally` makes sure we restore the original settings even if `f`
+  throws an exception.
 
 We turn off more flags than we discussed earlier. `IEXTEN` disables Ctrl-V, which on some systems
 waits for another character. `IXON` disables Ctrl-S and Ctrl-Q, an ancient form of flow control
@@ -159,14 +175,13 @@ longer interrupts our program, we quit when the user presses `q`.
 
 ```scala
 @main def keys(): Unit =
-  Terminal.withRawMode {
+  Terminal.withRawMode:
     var byte = System.in.read()
     while byte != 'q' && byte != -1 do
       // We turned off output processing, so we need \r\n to get a newline
       print(s"$byte\r\n")
       System.out.flush()
       byte = System.in.read()
-  }
 ```
 
 Run it, press some keys, and try the arrow keys. Each arrow key now shows up as three bytes: 27
@@ -178,4 +193,8 @@ up, down, down, left, right, left, right, B, A. When they do, reward them with s
 over-the-top using the escape codes from the previous section.
 @:@
 
+ We've skipped over a lot here: what a `Ptr` really is, how `Zone` manages memory and what happens if we use memory after its zone closes, how C types like `CInt` and `UInt` map to Scala, and how C functions report errors through `errno`. We'll come back to all of these when we write our own bindings.
+
 [konami]: https://en.wikipedia.org/wiki/Konami_Code
+[scala-native-posix]: https://scala-native.org/en/latest/lib/posixlib.html
+[region]: https://en.wikipedia.org/wiki/Region-based_memory_management

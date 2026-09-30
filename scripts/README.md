@@ -1,0 +1,1 @@
+This directory contains bits of code we developed while constructing this workshop. They are designed to be run with the Scala CLI, which is low fuss way to run a file of Scala code. Just use `scala <filename>` to run the code.
