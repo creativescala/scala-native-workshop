@@ -1,4 +1,4 @@
-# POSIX, Man Pages, and Bindings
+# POSIX APIs
 
 In the previous section we called `tcgetattr` and `tcsetattr` without asking where they came from.
 To write our own bindings we need to answer that question.
